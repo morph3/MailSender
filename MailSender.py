@@ -1,3 +1,5 @@
+    #Author: github.com/morph3
+import os
 import smtplib
 import argparse
 from email.mime.text import MIMEText
@@ -7,7 +9,7 @@ metuSmtpServer = "smtp.metu.edu.tr"
 gmailSmtpPort = 587
 gmailSmtpServer = "smtp.gmail.com"
 devsSmtpPort = 587
-devsSmtpServer = "smtp.mail.com"
+devsSmtpServer = "smtp.yandex.com"
 
 
 def message_parse(fileName):
@@ -23,9 +25,9 @@ def html_parse(fileName):
 
     return html
 
-def session(uid, pwd, fromAddr, toAddr,isHtml, subject):
+def session(uid, pwd, fromAddr, toAddr,isHtml, subject, message):
     # msg object has to be recreated in every new session
-    msg = message_parse("message.txt")
+    msg = MIMEText(message)
     msg['Subject'] = subject
     msg['From'] = fromAddr
     msg['To'] = toAddr
@@ -50,26 +52,27 @@ def session(uid, pwd, fromAddr, toAddr,isHtml, subject):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--recepient", help="recepient address")
+    parser.add_argument("--recipient", help="recipient address")
     parser.add_argument("uid", help="User id --which will be e+first 5 digits of school number--")
     parser.add_argument("pwd", help="User password ")
     parser.add_argument("fromAddr", help="Sender's email")
+    parser.add_argument("message", help="Message")
     parser.add_argument("--title", help="Mail Subject")
     
-
     args = parser.parse_args() 
     uid = args.uid
     pwd = args.pwd
     fromAddr = args.fromAddr
+    message = args.message
     if args.title:
         title = args.title
     else:
         title = "Untitled Email"
         
-    if args.recepient:
-        session(uid, pwd, fromAddr, args.recepient,0, title)
+    if args.recipient:
+        session(uid, pwd, fromAddr, args.recipient,0, title, message)
     else:
-        with open("emails.list", "r") as file:
+        with open(os.path.dirname(os.path.realpath(__file__))+"/emails.list", "r") as file:
             for item in file:
-                session(uid, pwd, fromAddr, item,0, title)
+                session(uid, pwd, fromAddr, item,0, title, message)
             file.close()
