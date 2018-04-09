@@ -1,43 +1,50 @@
-    #Author: github.com/morph3
-import os
+#Author github.com/morph3
 import smtplib
 import argparse
 from email.mime.text import MIMEText
-
+from email.mime.multipart import MIMEMultipart
 metuSmtpPort = 587
 metuSmtpServer = "smtp.metu.edu.tr"
 gmailSmtpPort = 587
 gmailSmtpServer = "smtp.gmail.com"
 devsSmtpPort = 587
-devsSmtpServer = "smtp.yandex.com"
+devsSmtpServer = "smtp.mail.com"
 
 
 def message_parse(fileName):
     with open(fileName, "r", encoding="utf-8") as f:
-        msg = MIMEText(f.read())
+        msg = MIMEText(f.read(),'plain')
         f.close()
     return msg
 
 
 def html_parse(fileName):
-    with open(fileName,"r",encoding="utf-8") as f:
-        html = f.read()
-
+    with open(fileName, "r", encoding="utf-8") as f:
+        html = MIMEText(f.read(),'html')
     return html
 
-def session(uid, pwd, fromAddr, toAddr,isHtml, subject, message):
+
+def session(uid, pwd, sender, destination, isHtml, subject,content):
     # msg object has to be recreated in every new session
-    msg = MIMEText(message)
+    msg = MIMEMultipart('alternative')
+    if(content != False):
+        text = MIMEText(content,'plain')
+        msg.attach(text)
+    else:
+        parsedMessage = message_parse("message.txt")
+        msg.attach(parsedMessage)
+
     msg['Subject'] = subject
-    msg['From'] = fromAddr
-    msg['To'] = toAddr
-    if(isHtml):
+    msg['From'] = sender
+    msg['To'] = destination
+
+    if (isHtml):
+        # under development
         html = html_parse("htmlMail.txt")
-        html2 = MIMEText(html,'html')
         msg.attach(html)
 
 
-    smtpObject = smtplib.SMTP(devsSmtpServer, devsSmtpPort)
+    smtpObject = smtplib.SMTP(metuSmtpServer, metuSmtpPort)
     smtpObject.ehlo()
     smtpObject.starttls()
     resp = smtpObject.login(uid, pwd)
@@ -51,28 +58,31 @@ def session(uid, pwd, fromAddr, toAddr,isHtml, subject, message):
 
 if __name__ == "__main__":
 
+    #argument parsing
     parser = argparse.ArgumentParser()
-    parser.add_argument("--recipient", help="recipient address")
-    parser.add_argument("uid", help="User id --which will be e+first 5 digits of school number--")
-    parser.add_argument("pwd", help="User password ")
-    parser.add_argument("fromAddr", help="Sender's email")
-    parser.add_argument("message", help="Message")
-    parser.add_argument("--title", help="Mail Subject")
-    
-    args = parser.parse_args() 
+    parser.add_argument("-u", "--uid", default="Username",help="User id --which will be e+first 5 digits of school number--")
+    parser.add_argument("-p", "--pwd", default="Password", help="User password ")
+    parser.add_argument("-s", "--sender", default="MailAdress", help="Sender's email")
+    parser.add_argument("-t", "--title", default="HelloWorld", help="Mail title")
+    parser.add_argument("-r", "--recipient", default=False, help="If there is only one recipient")
+    parser.add_argument("-m", "--msg", default=False, help="If you want to send a specific mail")
+    parser.add_argument("-html", "--html", default=False, help="If you are sending html mail")
+
+    args = parser.parse_args()
     uid = args.uid
     pwd = args.pwd
-    fromAddr = args.fromAddr
-    message = args.message
-    if args.title:
-        title = args.title
+    sender = args.sender
+    isHtml = args.html
+    title = args.title
+    recipient = args.recipient
+    content = args.msg
+    #endof argument parsing
+
+    if (recipient):
+        #if there is only one recipient
+        session(uid, pwd, sender, recipient, isHtml, title , content)
     else:
-        title = "Untitled Email"
-        
-    if args.recipient:
-        session(uid, pwd, fromAddr, args.recipient,0, title, message)
-    else:
-        with open(os.path.dirname(os.path.realpath(__file__))+"/emails.list", "r") as file:
+        with open("emails.txt", "r") as file:
             for item in file:
-                session(uid, pwd, fromAddr, item,0, title, message)
+                session(uid, pwd, sender, item, isHtml, title,content)
             file.close()
