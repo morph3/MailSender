@@ -27,19 +27,18 @@ def html_parse(fileName):
 def session(uid, pwd, sender, destination, isHtml, subject,content):
     # msg object has to be recreated in every new session
     msg = MIMEMultipart('alternative')
-    if(content != False):
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = destination
+    
+    if(content):
         text = MIMEText(content,'plain')
         msg.attach(text)
     else:
         parsedMessage = message_parse("message.txt")
         msg.attach(parsedMessage)
 
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = destination
-
     if (isHtml):
-        # under development
         html = html_parse("htmlMail.txt")
         msg.attach(html)
 
